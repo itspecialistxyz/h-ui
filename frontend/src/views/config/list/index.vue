@@ -174,6 +174,20 @@
             </el-select>
           </el-form-item>
         </el-tooltip>
+        <el-form-item label="Allowed Admin Domain" prop="huiAllowedDomain">
+          <el-input
+            v-model="dataForm.huiAllowedDomain"
+            placeholder="e.g. admin.example.com"
+            clearable
+          />
+        </el-form-item>
+        <el-form-item label="Admin Security Path" prop="huiSecurityPath">
+          <el-input
+            v-model="dataForm.huiSecurityPath"
+            placeholder="e.g. /hui/auth/login/secret123"
+            clearable
+          />
+        </el-form-item>
       </el-form>
     </el-card>
   </div>
@@ -218,6 +232,8 @@ const hysteria2TrafficTimeKey = "HYSTERIA2_TRAFFIC_TIME";
 const huiCrtPathKey = "H_UI_CRT_PATH";
 const huiKeyPathKey = "H_UI_KEY_PATH";
 const resetTrafficCronKey = "RESET_TRAFFIC_CRON";
+const huiAllowedDomainKey = "HUI_ALLOWED_DOMAIN";
+const huiSecurityPathKey = "HUI_SECURITY_PATH";
 
 const huiHttpsList = [
   { key: t("common.yes"), value: 1 },
@@ -276,6 +292,8 @@ const state = reactive({
     huiCrtPath: "",
     huiKeyPath: "",
     resetTrafficCron: "",
+    huiAllowedDomain: "",
+    huiSecurityPath: "",
   },
   huiHttps: 0,
   fileList: [] as UploadUserFile[],
@@ -326,6 +344,14 @@ const submitForm = () => {
           key: resetTrafficCronKey,
           value: state.dataForm.resetTrafficCron,
         },
+        {
+          key: huiAllowedDomainKey,
+          value: state.dataForm.huiAllowedDomain,
+        },
+        {
+          key: huiSecurityPathKey,
+          value: state.dataForm.huiSecurityPath,
+        },
       ];
 
       updateConfigsApi({ configUpdateDtos: configs }).then(() => {
@@ -344,6 +370,8 @@ const setConfig = async () => {
       huiWebPortKey,
       hysteria2TrafficTimeKey,
       resetTrafficCronKey,
+      huiAllowedDomainKey,
+      huiSecurityPathKey,
     ],
   });
 
@@ -360,6 +388,10 @@ const setConfig = async () => {
       state.dataForm.huiKeyPath = configVo.value;
     } else if (configVo.key === resetTrafficCronKey) {
       state.dataForm.resetTrafficCron = configVo.value;
+    } else if (configVo.key === huiAllowedDomainKey) {
+      state.dataForm.huiAllowedDomain = configVo.value;
+    } else if (configVo.key === huiSecurityPathKey) {
+      state.dataForm.huiSecurityPath = configVo.value;
     }
   });
 

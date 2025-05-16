@@ -19,4 +19,6 @@ const (
 	TelegramLoginJobEnable     = "TELEGRAM_LOGIN_JOB_ENABLE"
 	TelegramLoginJobText       = "TELEGRAM_LOGIN_JOB_TEXT"
 	ClashExtension             = "CLASH_EXTENSION"
+	HUIAllowedDomain           = "HUI_ALLOWED_DOMAIN"
+	HUISecurityPath            = "HUI_SECURITY_PATH"
 )

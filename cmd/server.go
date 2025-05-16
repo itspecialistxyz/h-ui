@@ -3,8 +3,6 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	"h-ui/dao"
 	"h-ui/middleware"
 	"h-ui/model/constant"
@@ -13,10 +11,18 @@ import (
 	"h-ui/util"
 	"net/http"
 	"os"
+
+	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 func runServer(port string) error {
 	defer releaseResource()
+
+	// Security: Check required env vars for domain/path restriction
+	if os.Getenv("HUI_ALLOWED_DOMAIN") == "" || os.Getenv("HUI_SECURITY_PATH") == "" {
+		logrus.Fatal("HUI_ALLOWED_DOMAIN and HUI_SECURITY_PATH environment variables must be set for admin login security.")
+	}
 
 	middleware.InitLog()
 	service.InitForward()
