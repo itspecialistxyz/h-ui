@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//go:embed dist/*
+//go:embed frontend/dist/*
 var staticFiles embed.FS
 
 func InitFrontend(router *gin.Engine, huiWebContext *string) {
@@ -20,7 +20,7 @@ func InitFrontend(router *gin.Engine, huiWebContext *string) {
 	}
 	// Serve index.html for the root context
 	router.GET(relativePath, func(c *gin.Context) {
-		indexHTML, err := staticFiles.ReadFile("index.html") // Changed: removed "dist/"
+		indexHTML, err := staticFiles.ReadFile("frontend/dist/index.html")
 		if err != nil {
 			c.String(http.StatusInternalServerError, "Internal Server Error: index.html not found in embed FS")
 			return
@@ -29,7 +29,7 @@ func InitFrontend(router *gin.Engine, huiWebContext *string) {
 	})
 	// Serve index.html for all subpaths (SPA deep link support)
 	router.GET(relativePath+"/*any", func(c *gin.Context) {
-		indexHTML, err := staticFiles.ReadFile("index.html") // Changed: removed "dist/"
+		indexHTML, err := staticFiles.ReadFile("frontend/dist/index.html")
 		if err != nil {
 			c.String(http.StatusInternalServerError, "Internal Server Error: index.html for /*any not found")
 			return
@@ -38,7 +38,7 @@ func InitFrontend(router *gin.Engine, huiWebContext *string) {
 	})
 
 	router.GET("/favicon.ico", func(c *gin.Context) {
-		faviconBytes, err := staticFiles.ReadFile("favicon.ico") // Changed: removed "dist/"
+		faviconBytes, err := staticFiles.ReadFile("frontend/dist/favicon.ico")
 		if err != nil {
 			c.String(http.StatusInternalServerError, "Internal Server Error: favicon.ico not found")
 			return
@@ -47,7 +47,7 @@ func InitFrontend(router *gin.Engine, huiWebContext *string) {
 	})
 
 	// Serve static assets from the "assets" subdirectory within the embedded dist
-	assetsFS, err := fs.Sub(staticFiles, "assets")
+	assetsFS, err := fs.Sub(staticFiles, "frontend/dist/assets")
 	if err != nil {
 		// This would mean the "dist/assets" directory wasn't embedded or is empty
 		// Handle this error appropriately, perhaps by logging and not setting up the route
@@ -63,7 +63,7 @@ func InitFrontend(router *gin.Engine, huiWebContext *string) {
 
 		// Avoid serving index.html again if it's a direct request to it via NoRoute
 		if filePath == "index.html" || filePath == "" {
-			indexHTML, err := staticFiles.ReadFile("index.html")
+			indexHTML, err := staticFiles.ReadFile("frontend/dist/index.html")
 			if err != nil {
 				c.String(http.StatusInternalServerError, "Internal Server Error")
 				return
@@ -72,10 +72,10 @@ func InitFrontend(router *gin.Engine, huiWebContext *string) {
 			return
 		}
 
-		fileContent, err := staticFiles.ReadFile(filePath) // Changed: removed "dist" prefix logic
+		fileContent, err := staticFiles.ReadFile("frontend/dist/" + filePath)
 		if err != nil {
 			// If file not found in embed FS, try serving index.html for SPA routing
-			indexHTML, err := staticFiles.ReadFile("index.html")
+			indexHTML, err := staticFiles.ReadFile("frontend/dist/index.html")
 			if err != nil {
 				c.String(http.StatusInternalServerError, "Internal Server Error")
 				return
