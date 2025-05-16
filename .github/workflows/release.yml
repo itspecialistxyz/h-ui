@@ -52,7 +52,7 @@ jobs:
           GOARCH: ${{ matrix.target.goarch }}
           # GOARM will be set in the run script if matrix.target.goarm is defined
         run: |
-          BINARY_NAME="h-ui-linux-${{ matrix.target.name }}"
+          BINARY_NAME="h-ui-linux-${{ matrix.target.name }}-${{ matrix.runner_os }}"
           echo "BINARY_NAME=$BINARY_NAME" >> $GITHUB_ENV
 
           BUILD_CMD="go build -trimpath -ldflags='-s -w' -o $BINARY_NAME ."
@@ -92,16 +92,23 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
-          body: "Automated release for ${{ github.ref_name }}. Binaries for Linux (amd64, arm64, armv7, armv6, armv5, 386, s390x)."
+          body: "Automated release for ${{ github.ref_name }}. Binaries for Linux (amd64, arm64, armv7, armv6, armv5, 386, s390x) on Ubuntu 22.04 and 24.04."
           draft: false
           prerelease: false
-          files: | # Paths to the downloaded artifact files
-            release-assets/h-ui-linux-amd64/h-ui-linux-amd64
-            release-assets/h-ui-linux-arm64/h-ui-linux-arm64
-            release-assets/h-ui-linux-armv7/h-ui-linux-armv7
-            release-assets/h-ui-linux-armv6/h-ui-linux-armv6
-            release-assets/h-ui-linux-armv5/h-ui-linux-armv5
-            release-assets/h-ui-linux-386/h-ui-linux-386
-            release-assets/h-ui-linux-s390x/h-ui-linux-s390x
+          files: |
+            release-assets/h-ui-linux-amd64-ubuntu-22.04/h-ui-linux-amd64-ubuntu-22.04
+            release-assets/h-ui-linux-amd64-ubuntu-24.04/h-ui-linux-amd64-ubuntu-24.04
+            release-assets/h-ui-linux-arm64-ubuntu-22.04/h-ui-linux-arm64-ubuntu-22.04
+            release-assets/h-ui-linux-arm64-ubuntu-24.04/h-ui-linux-arm64-ubuntu-24.04
+            release-assets/h-ui-linux-armv7-ubuntu-22.04/h-ui-linux-armv7-ubuntu-22.04
+            release-assets/h-ui-linux-armv7-ubuntu-24.04/h-ui-linux-armv7-ubuntu-24.04
+            release-assets/h-ui-linux-armv6-ubuntu-22.04/h-ui-linux-armv6-ubuntu-22.04
+            release-assets/h-ui-linux-armv6-ubuntu-24.04/h-ui-linux-armv6-ubuntu-24.04
+            release-assets/h-ui-linux-armv5-ubuntu-22.04/h-ui-linux-armv5-ubuntu-22.04
+            release-assets/h-ui-linux-armv5-ubuntu-24.04/h-ui-linux-armv5-ubuntu-24.04
+            release-assets/h-ui-linux-386-ubuntu-22.04/h-ui-linux-386-ubuntu-22.04
+            release-assets/h-ui-linux-386-ubuntu-24.04/h-ui-linux-386-ubuntu-24.04
+            release-assets/h-ui-linux-s390x-ubuntu-22.04/h-ui-linux-s390x-ubuntu-22.04
+            release-assets/h-ui-linux-s390x-ubuntu-24.04/h-ui-linux-s390x-ubuntu-24.04
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
