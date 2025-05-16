@@ -59,7 +59,7 @@ func InitFrontend(router *gin.Engine, huiWebContext *string) {
 
 	router.NoRoute(func(c *gin.Context) {
 		filePath := strings.TrimPrefix(c.Request.URL.Path, relativePath) // Ensure path is relative to web context
-		filePath = strings.TrimPrefix(filePath, "/")                   // Ensure no leading slash for ReadFile
+		filePath = strings.TrimPrefix(filePath, "/")                     // Ensure no leading slash for ReadFile
 
 		// Avoid serving index.html again if it's a direct request to it via NoRoute
 		if filePath == "index.html" || filePath == "" {

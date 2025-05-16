@@ -1,0 +1,90 @@
+name: Release Build and Publish
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger on version tags like v1.0.0
+
+jobs:
+  build-binaries:
+    name: Build for ${{ matrix.runner_os }} / ${{ matrix.target.name }}
+    runs-on: ${{ matrix.runner_os }}
+    strategy:
+      matrix:
+        runner_os: [ubuntu-22.04, ubuntu-24.04]
+        target:
+          - { name: amd64, goarch: amd64 }
+          - { name: arm64, goarch: arm64 }
+          - { name: armv7, goarch: arm, goarm: '7' }
+          - { name: armv6, goarch: arm, goarm: '6' }
+          - { name: armv5, goarch: arm, goarm: '5' }
+          - { name: '386', goarch: '386' }
+          - { name: s390x, goarch: s390x }
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod' # Assumes go.mod is in the root
+
+      - name: Build binary
+        env:
+          GOOS: linux # Since runners are Ubuntu
+          GOARCH: ${{ matrix.target.goarch }}
+          # GOARM will be set in the run script if matrix.target.goarm is defined
+        run: |
+          BINARY_NAME="h-ui-linux-${{ matrix.target.name }}"
+          echo "BINARY_NAME=$BINARY_NAME" >> $GITHUB_ENV
+
+          BUILD_CMD="go build -trimpath -ldflags='-s -w' -o $BINARY_NAME ."
+
+          if [ -n "${{ matrix.target.goarm }}" ]; then
+            export GOARM=${{ matrix.target.goarm }}
+            echo "Building with GOOS=$GOOS GOARCH=$GOARCH GOARM=$GOARM for $BINARY_NAME"
+          else
+            echo "Building with GOOS=$GOOS GOARCH=$GOARCH for $BINARY_NAME"
+          fi
+          eval $BUILD_CMD
+          chmod +x $BINARY_NAME
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.BINARY_NAME }}
+          path: ${{ env.BINARY_NAME }}
+
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: build-binaries # Wait for all build jobs to complete
+    permissions:
+      contents: write # Required to create releases and upload assets
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets # All artifacts will be downloaded here
+
+      - name: Display structure of downloaded files
+        run: ls -R release-assets
+
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: "Automated release for ${{ github.ref_name }}. Binaries for Linux (amd64, arm64, armv7, armv6, armv5, 386, s390x)."
+          draft: false
+          prerelease: false
+          files: | # Paths to the downloaded artifact files
+            release-assets/h-ui-linux-amd64/h-ui-linux-amd64
+            release-assets/h-ui-linux-arm64/h-ui-linux-arm64
+            release-assets/h-ui-linux-armv7/h-ui-linux-armv7
+            release-assets/h-ui-linux-armv6/h-ui-linux-armv6
+            release-assets/h-ui-linux-armv5/h-ui-linux-armv5
+            release-assets/h-ui-linux-386/h-ui-linux-386
+            release-assets/h-ui-linux-s390x/h-ui-linux-s390x
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
