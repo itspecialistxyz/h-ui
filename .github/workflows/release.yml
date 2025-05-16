@@ -50,9 +50,8 @@ jobs:
         env:
           GOOS: linux # Since runners are Ubuntu
           GOARCH: ${{ matrix.target.goarch }}
-          # GOARM will be set in the run script if matrix.target.goarm is defined
         run: |
-          BINARY_NAME="h-ui-linux-${{ matrix.target.name }}-${{ matrix.runner_os }}"
+          BINARY_NAME="h-ui_linux_${{ matrix.target.name }}_${{ matrix.runner_os }}"
           echo "BINARY_NAME=$BINARY_NAME" >> $GITHUB_ENV
 
           BUILD_CMD="go build -trimpath -ldflags='-s -w' -o $BINARY_NAME ."
@@ -96,19 +95,19 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            release-assets/h-ui-linux-amd64-ubuntu-22.04/h-ui-linux-amd64-ubuntu-22.04
-            release-assets/h-ui-linux-amd64-ubuntu-24.04/h-ui-linux-amd64-ubuntu-24.04
-            release-assets/h-ui-linux-arm64-ubuntu-22.04/h-ui-linux-arm64-ubuntu-22.04
-            release-assets/h-ui-linux-arm64-ubuntu-24.04/h-ui-linux-arm64-ubuntu-24.04
-            release-assets/h-ui-linux-armv7-ubuntu-22.04/h-ui-linux-armv7-ubuntu-22.04
-            release-assets/h-ui-linux-armv7-ubuntu-24.04/h-ui-linux-armv7-ubuntu-24.04
-            release-assets/h-ui-linux-armv6-ubuntu-22.04/h-ui-linux-armv6-ubuntu-22.04
-            release-assets/h-ui-linux-armv6-ubuntu-24.04/h-ui-linux-armv6-ubuntu-24.04
-            release-assets/h-ui-linux-armv5-ubuntu-22.04/h-ui-linux-armv5-ubuntu-22.04
-            release-assets/h-ui-linux-armv5-ubuntu-24.04/h-ui-linux-armv5-ubuntu-24.04
-            release-assets/h-ui-linux-386-ubuntu-22.04/h-ui-linux-386-ubuntu-22.04
-            release-assets/h-ui-linux-386-ubuntu-24.04/h-ui-linux-386-ubuntu-24.04
-            release-assets/h-ui-linux-s390x-ubuntu-22.04/h-ui-linux-s390x-ubuntu-22.04
-            release-assets/h-ui-linux-s390x-ubuntu-24.04/h-ui-linux-s390x-ubuntu-24.04
+            release-assets/h-ui_linux_amd64_ubuntu-22.04/h-ui_linux_amd64_ubuntu-22.04
+            release-assets/h-ui_linux_amd64_ubuntu-24.04/h-ui_linux_amd64_ubuntu-24.04
+            release-assets/h-ui_linux_arm64_ubuntu-22.04/h-ui_linux_arm64_ubuntu-22.04
+            release-assets/h-ui_linux_arm64_ubuntu-24.04/h-ui_linux_arm64_ubuntu-24.04
+            release-assets/h-ui_linux_armv7_ubuntu-22.04/h-ui_linux_armv7_ubuntu-22.04
+            release-assets/h-ui_linux_armv7_ubuntu-24.04/h-ui_linux_armv7_ubuntu-24.04
+            release-assets/h-ui_linux_armv6_ubuntu-22.04/h-ui_linux_armv6_ubuntu-22.04
+            release-assets/h-ui_linux_armv6_ubuntu-24.04/h-ui_linux_armv6_ubuntu-24.04
+            release-assets/h-ui_linux_armv5_ubuntu-22.04/h-ui_linux_armv5_ubuntu-22.04
+            release-assets/h-ui_linux_armv5_ubuntu-24.04/h-ui_linux_armv5_ubuntu-24.04
+            release-assets/h-ui_linux_386_ubuntu-22.04/h-ui_linux_386_ubuntu-22.04
+            release-assets/h-ui_linux_386_ubuntu-24.04/h-ui_linux_386_ubuntu-24.04
+            release-assets/h-ui_linux_s390x_ubuntu-22.04/h-ui_linux_s390x_ubuntu-22.04
+            release-assets/h-ui_linux_s390x_ubuntu-24.04/h-ui_linux_s390x_ubuntu-24.04
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
