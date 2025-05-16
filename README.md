@@ -1,19 +1,17 @@
 <div align="center">
 
-<a href="https://github.com/jonssonyan/h-ui"><img src="./docs/images/head-cover.png" alt="H UI" width="150" /></a>
+<a href="https://github.com/itspecialistxyz/h-ui"><img src="./docs/images/head-cover.png" alt="H UI" width="150" /></a>
 
-<h1 align="center">H UI</h1>
+<h1 align="center">Hysteria2 UI</h1>
 
-English / [简体中文](README_ZH.md)
-
-Just the panel for Hysteria2
-
-<p>
-<a href="https://www.gnu.org/licenses/gpl-3.0.html"><img src="https://img.shields.io/github/license/jonssonyan/h-ui" alt="License: GPL-3.0"></a>
-<a href="https://github.com/jonssonyan/h-ui/stargazers"><img src="https://img.shields.io/github/stars/jonssonyan/h-ui" alt="GitHub stars"></a>
-<a href="https://github.com/jonssonyan/h-ui/forks"><img src="https://img.shields.io/github/forks/jonssonyan/h-ui" alt="GitHub forks"></a>
-<a href="https://github.com/jonssonyan/h-ui/releases"><img src="https://img.shields.io/github/v/release/jonssonyan/h-ui" alt="GitHub release"></a>
-<a href="https://hub.docker.com/r/jonssonyan/h-ui"><img src="https://img.shields.io/docker/pulls/jonssonyan/h-ui" alt="Docker pulls"></a>
+<p align="center">
+<a href="https://www.gnu.org/licenses/gpl-3.0.html"><img src="https://img.shields.io/github/license/itspecialistxyz/h-ui" alt="License: GPL-3.0"></a>
+<a href="https://github.com/itspecialistxyz/h-ui/stargazers"><img src="https://img.shields.io/github/stars/itspecialistxyz/h-ui" alt="GitHub stars"></a>
+<a href="https://github.com/itspecialistxyz/h-ui/forks"><img src="https://img.shields.io/github/forks/itspecialistxyz/h-ui" alt="GitHub forks"></a>
+<a href="https://github.com/itspecialistxyz/h-ui/releases"><img src="https://img.shields.io/github/v/release/itspecialistxyz/h-ui" alt="GitHub release"></a>
+<a href="https://hub.docker.com/r/itspecialistxyz/h-ui"><img src="https://img.shields.io/docker/pulls/itspecialistxyz/h-ui" alt="Docker pulls"></a>
+<a href="https://github.com/itspecialistxyz/h-ui/actions/workflows/release.yml"><img src="https://github.com/itspecialistxyz/h-ui/actions/workflows/release.yml/badge.svg" alt="Build Status"></a>
+<a href="https://github.com/itspecialistxyz/h-ui/actions/workflows/docker-build.yml"><img src="https://github.com/itspecialistxyz/h-ui/actions/workflows/docker-build.yml/badge.svg" alt="Docker Build Status"></a>
 </p>
 
 ![cover](./docs/images/cover.png)
@@ -50,23 +48,22 @@ Memory: ≥ 256MB
 Install Latest Version
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/jonssonyan/h-ui/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/itspecialistxyz/h-ui/main/install.sh)
 ```
 
-Install [Custom Version](https://github.com/jonssonyan/h-ui/releases)
+Install [Custom Version](https://github.com/itspecialistxyz/h-ui/releases)
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/jonssonyan/h-ui/main/install.sh) v0.0.1
+bash <(curl -fsSL https://raw.githubusercontent.com/itspecialistxyz/h-ui/main/install.sh) v0.0.1
 ```
 
-### systemd
+### Manual Install
+#### Download
+Executable files: https://github.com/itspecialistxyz/h-ui/releases
 
-Executable files: https://github.com/jonssonyan/h-ui/releases
-
-```bash
-mkdir -p /usr/local/h-ui/
-curl -fsSL https://github.com/jonssonyan/h-ui/releases/latest/download/h-ui-linux-amd64 -o /usr/local/h-ui/h-ui && chmod +x /usr/local/h-ui/h-ui
-curl -fsSL https://raw.githubusercontent.com/jonssonyan/h-ui/main/h-ui.service -o /etc/systemd/system/h-ui.service
+#### Install
+curl -fsSL https://github.com/itspecialistxyz/h-ui/releases/latest/download/h-ui-linux-amd64 -o /usr/local/h-ui/h-ui && chmod +x /usr/local/h-ui/h-ui
+curl -fsSL https://raw.githubusercontent.com/itspecialistxyz/h-ui/main/h-ui.service -o /etc/systemd/system/h-ui.service
 # Custom web port, default is 8081
 # sed -i "s|^ExecStart=.*|ExecStart=/usr/local/h-ui/h-ui -p 8081|" "/etc/systemd/system/h-ui.service"
 systemctl daemon-reload
@@ -94,7 +91,7 @@ rm -rf /etc/systemd/system/h-ui.service /usr/local/h-ui/
 2. Start a container
 
    ```bash
-   docker pull jonssonyan/h-ui
+   docker pull itspecialistxyz/h-ui
 
    docker run -d --cap-add=NET_ADMIN \
      --name h-ui --restart always \
@@ -103,7 +100,7 @@ rm -rf /etc/systemd/system/h-ui.service /usr/local/h-ui/
      -v /h-ui/data:/h-ui/data \
      -v /h-ui/export:/h-ui/export \
      -v /h-ui/logs:/h-ui/logs \
-     jonssonyan/h-ui
+     itspecialistxyz/h-ui
    ```
 
    Custom web port, default is 8081
@@ -116,7 +113,7 @@ rm -rf /etc/systemd/system/h-ui.service /usr/local/h-ui/
      -v /h-ui/data:/h-ui/data \
      -v /h-ui/export:/h-ui/export \
      -v /h-ui/logs:/h-ui/logs \
-     jonssonyan/h-ui \
+     itspecialistxyz/h-ui \
      ./h-ui -p 8081
    ```
 
@@ -131,14 +128,14 @@ rm -rf /etc/systemd/system/h-ui.service /usr/local/h-ui/
      -v /h-ui/data:/h-ui/data \
      -v /h-ui/export:/h-ui/export \
      -v /h-ui/logs:/h-ui/logs \
-     jonssonyan/h-ui
+     itspecialistxyz/h-ui
    ```
 
 Uninstall
 
 ```bash
 docker rm -f h-ui
-docker rmi jonssonyan/h-ui
+docker rmi itspecialistxyz/h-ui
 rm -rf /h-ui
 ```
 

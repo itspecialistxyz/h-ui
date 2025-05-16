@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "H UI",
-  "author": "jonssonyan <https://jonssonyan.com>",
+  "author": "itspecialistxyz <https://itspecialistxyz.com>",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
