@@ -2,12 +2,13 @@ package controller
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"h-ui/model/constant"
 	"h-ui/model/vo"
 	"net/http"
 	"regexp"
+
+	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
 var validate *validator.Validate
@@ -26,14 +27,25 @@ func validateStr(f validator.FieldLevel) bool {
 }
 
 func validateField[T interface{}](c *gin.Context, field T) (T, error) {
+	var bindErr error
 	if c.Request.Method == http.MethodGet {
-		_ = c.ShouldBindQuery(&field)
+		bindErr = c.ShouldBindQuery(&field)
 	} else if c.Request.Method == http.MethodPost ||
 		c.Request.Method == http.MethodPut ||
 		c.Request.Method == http.MethodDelete {
-		_ = c.ShouldBindJSON(&field)
+		bindErr = c.ShouldBindJSON(&field)
 	}
+
+	if bindErr != nil {
+		vo.Fail(fmt.Sprintf("Invalid request format: %v", bindErr), c)
+		return field, fmt.Errorf("binding error: %w", bindErr)
+	}
+
 	if err := validate.Struct(&field); err != nil {
+		if validationErrors, ok := err.(validator.ValidationErrors); ok {
+			vo.Fail(fmt.Sprintf("Validation failed: %v", validationErrors), c)
+			return field, fmt.Errorf("validation error: %w", err)
+		}
 		vo.Fail(constant.InvalidError, c)
 		return field, fmt.Errorf(constant.InvalidError)
 	}

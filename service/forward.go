@@ -7,6 +7,8 @@ import (
 	"h-ui/model/constant"
 	"h-ui/util"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -54,18 +56,23 @@ func InitPortHopping() error {
 	if err != nil {
 		return err
 	}
-
 	// set port forward
 	hysteria2ConfigPortHopping, err := dao.GetConfig("key = ?", constant.Hysteria2ConfigPortHopping)
 	if err != nil {
 		return err
 	}
-	if *hysteria2ConfigPortHopping.Value != "" {
-		listen := strings.Split(*hysteria2Config.Listen, ":")
-		if len(listen) == 2 {
-			if err := portForward(*hysteria2ConfigPortHopping.Value, listen[1], Add); err != nil {
-				return err
+
+	if hysteria2ConfigPortHopping.Value != nil && *hysteria2ConfigPortHopping.Value != "" {
+		if hysteria2Config.Listen != nil {
+			listen := strings.Split(*hysteria2Config.Listen, ":")
+			if len(listen) == 2 {
+				if err := portForward(*hysteria2ConfigPortHopping.Value, listen[1], Add); err != nil {
+					return err
+				}
 			}
+		} else {
+			logrus.Error("Hysteria2 Listen configuration is nil")
+			return errors.New("hysteria2 listen configuration is nil")
 		}
 	}
 	return nil

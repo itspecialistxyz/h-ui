@@ -6,23 +6,35 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/sirupsen/logrus"
 )
 
 func Exists(path string) bool {
+	if path == "" {
+		return false
+	}
 	_, err := os.Stat(path)
 	if err != nil {
-		if os.IsExist(err) {
-			return true
+		if os.IsNotExist(err) {
+			return false // File doesn't exist
 		}
+		// For other errors like permission issues, log but still return false
+		logrus.Errorf("Error checking if file %s exists: %v", path, err)
 		return false
 	}
 	return true
 }
 
 func RemoveFile(fileName string) error {
+	if fileName == "" {
+		return errors.New("empty file name provided")
+	}
+
 	if Exists(fileName) {
 		if err := os.Remove(fileName); err != nil {
-			return errors.New("failed to delete file")
+			logrus.Errorf("Failed to delete file %s: %v", fileName, err)
+			return fmt.Errorf("failed to delete file: %w", err)
 		}
 	}
 	return nil
@@ -64,6 +76,7 @@ func ReadLinesFromBottom(filePath string, numLines int) ([]string, int, error) {
 
 func FindFile(dir, filename string) (string, error) {
 	var result string
+	var foundErr = errors.New("file found")
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -74,11 +87,11 @@ func FindFile(dir, filename string) (string, error) {
 				return err
 			}
 			result = absPath
-			return errors.New("file found")
+			return foundErr
 		}
 		return nil
 	})
-	if err != nil && err.Error() != "file found" {
+	if err != nil && err != foundErr {
 		return "", err
 	}
 	if result == "" {

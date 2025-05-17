@@ -6,12 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"h-ui/model/bo"
 	"h-ui/model/constant"
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 type Hysteria2Api struct {
@@ -32,10 +33,12 @@ func (h *Hysteria2Api) ListUsers(clear bool, secret string) (map[string]bo.Hyste
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
+
 	url := fmt.Sprintf("http://127.0.0.1:%d/traffic", h.apiPort)
 	if clear {
 		url = fmt.Sprintf("%s?clear=1", url)
 	}
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		logrus.Errorf("Hysteria2 ListUsers NewRequest err: %v", err)
@@ -43,13 +46,17 @@ func (h *Hysteria2Api) ListUsers(clear bool, secret string) (map[string]bo.Hyste
 	}
 	req.Header.Set("Authorization", secret)
 	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		logrus.Errorf("Hysteria2 ListUsers err: %v", err)
+		return nil, errors.New("http connection error")
+	}
 	defer func() {
 		if resp != nil {
 			_ = resp.Body.Close()
 		}
 	}()
-	if err != nil || resp.StatusCode != http.StatusOK {
-		logrus.Errorf("Hysteria2 ListUsers err: %v", err)
+	if resp.StatusCode != http.StatusOK {
+		logrus.Errorf("Hysteria2 ListUsers status code error: %d", resp.StatusCode)
 		return nil, errors.New("http connection error")
 	}
 	body, err := io.ReadAll(resp.Body)
@@ -86,13 +93,17 @@ func (h *Hysteria2Api) KickUsers(keys []string, secret string) error {
 	req.Header.Set("Authorization", secret)
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		logrus.Errorf("Hysteria2 KickUsers err: %v", err)
+		return errors.New("http connection error")
+	}
 	defer func() {
 		if resp != nil {
 			resp.Body.Close()
 		}
 	}()
-	if err != nil || resp.StatusCode != http.StatusOK {
-		logrus.Errorf("Hysteria2 KickUsers err: %v", err)
+	if resp.StatusCode != http.StatusOK {
+		logrus.Errorf("Hysteria2 KickUsers status code error: %d", resp.StatusCode)
 		return errors.New("http connection error")
 	}
 	return nil
@@ -114,13 +125,17 @@ func (h *Hysteria2Api) OnlineUsers(secret string) (map[string]int64, error) {
 	}
 	req.Header.Set("Authorization", secret)
 	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		logrus.Errorf("Hysteria2 OnlineUsers err: %v", err)
+		return nil, errors.New("http connection error")
+	}
 	defer func() {
 		if resp != nil {
 			_ = resp.Body.Close()
 		}
 	}()
-	if err != nil || resp.StatusCode != http.StatusOK {
-		logrus.Errorf("Hysteria2 OnlineUsers err: %v", err)
+	if resp.StatusCode != http.StatusOK {
+		logrus.Errorf("Hysteria2 OnlineUsers status code error: %d", resp.StatusCode)
 		return nil, errors.New("http connection error")
 	}
 	body, err := io.ReadAll(resp.Body)

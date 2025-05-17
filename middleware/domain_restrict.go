@@ -29,7 +29,8 @@ func DomainPathRestrictHandler() gin.HandlerFunc {
 		}
 
 		if allowedDomain == "" || securityPath == "" {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Server misconfiguration: domain or security path not set"})
+			// If not configured, allow access (fresh install or misconfiguration)
+			c.Next()
 			return
 		}
 		if c.Request.Host != allowedDomain || !strings.HasPrefix(c.Request.URL.Path, securityPath) {

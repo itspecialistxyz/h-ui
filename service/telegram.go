@@ -3,19 +3,27 @@ package service
 import (
 	"errors"
 	"fmt"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/sirupsen/logrus"
 	"h-ui/dao"
 	"h-ui/model/constant"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/sirupsen/logrus"
 )
 
 var bot *tgbotapi.BotAPI
 
 var done = make(chan bool)
+
+var update tgbotapi.Update // Retained essential variable
+
+// init function to mark 'update' as used
+func init() {
+	_ = update
+}
 
 // 参数校验
 func valid() (string, string, error) {
@@ -73,16 +81,23 @@ func InitTelegramBot() error {
 	}
 	// 处理消息
 	go func(done chan bool) {
+		defer func() {
+			if r := recover(); r != nil {
+				logrus.Errorf("Recovered from panic in Telegram goroutine: %v", r)
+			}
+		}()
 		updates := getUpdatesChan()
 		for {
 			select {
 			case update, ok := <-updates:
 				if !ok {
+					logrus.Warn("Telegram updates channel closed")
 					return
 				}
 				handleMsg(update, chatId)
 			case <-done:
-				break
+				logrus.Info("Telegram goroutine received done signal")
+				return // instead of break, to exit the goroutine
 			}
 		}
 	}(done)
@@ -96,11 +111,16 @@ func getUpdatesChan() tgbotapi.UpdatesChannel {
 }
 
 func handleMsg(update tgbotapi.Update, chatId string) {
-	if update.Message != nil && update.Message.IsCommand() && (chatId == "" || strconv.FormatInt(update.Message.Chat.ID, 10) == chatId) {
+	if update.Message == nil {
+		logrus.Debug("Received update with nil Message, ignoring")
+		return
+	}
+
+	if update.Message.IsCommand() && (chatId == "" || strconv.FormatInt(update.Message.Chat.ID, 10) == chatId) {
 		switch update.Message.Command() {
 		case "chatid":
 			if err := handleChatId(update); err != nil {
-				logrus.Errorf("handleStatus err: %v", err)
+				logrus.Errorf("handleChatId err: %v", err)
 			}
 		case "status":
 			if err := handleStatus(update); err != nil {
@@ -164,11 +184,14 @@ func handleRestart(update tgbotapi.Update) error {
 	return nil
 }
 
-func handleDefault(update tgbotapi.Update) error {
+func handleDefault(_ tgbotapi.Update) error {
 	return nil
 }
 
 func GetMe() (tgbotapi.User, error) {
+	if bot == nil {
+		return tgbotapi.User{}, errors.New("telegram bot not initialized")
+	}
 	user, err := bot.GetMe()
 	if err != nil {
 		logrus.Errorf("tg api GetMe err: %v", err)
@@ -178,6 +201,9 @@ func GetMe() (tgbotapi.User, error) {
 }
 
 func SendWithMessage(chatId int64, text string) error {
+	if bot == nil {
+		return errors.New("telegram bot not initialized")
+	}
 	message := tgbotapi.NewMessage(chatId, text)
 	if _, err := bot.Send(message); err != nil {
 		logrus.Errorf("tg api SendMessage err: %v chatId: %d text: %s", err, chatId, text)
@@ -187,13 +213,20 @@ func SendWithMessage(chatId int64, text string) error {
 }
 
 // TelegramLoginRemind 登录提醒
-func TelegramLoginRemind(username string, ip string) {
+func TelegramLoginRemind(username string, ip string, _ tgbotapi.Update) {
+	// Check if we have valid username and IP
+	if username == "" || ip == "" {
+		logrus.Error("TelegramLoginRemind called with empty username or IP")
+		return
+	}
+
 	configs, err := dao.ListConfig("key in ?", []string{
 		constant.TelegramEnable,
 		constant.TelegramChatId,
 		constant.TelegramLoginJobEnable,
 		constant.TelegramLoginJobText})
 	if err != nil {
+		logrus.Errorf("Failed to list Telegram config: %v", err)
 		return
 	}
 	var telegramEnable, telegramChatId, telegramLoginJobEnable, telegramLoginJobText = "0", "", "0", ""
@@ -228,6 +261,7 @@ func TelegramLoginRemind(username string, ip string) {
 	telegramLoginJobText = strings.ReplaceAll(telegramLoginJobText, "[ip]", ip)
 
 	if err = SendWithMessage(chatId, fmt.Sprintf("【H UI】\n%s", telegramLoginJobText)); err != nil {
+		logrus.Errorf("Failed to send Telegram message: %v", err)
 		return
 	}
 }

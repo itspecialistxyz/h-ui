@@ -3,15 +3,16 @@ package util
 import (
 	"errors"
 	"fmt"
-	"github.com/shirou/gopsutil/cpu"
-	"github.com/shirou/gopsutil/disk"
-	"github.com/shirou/gopsutil/mem"
-	"github.com/sirupsen/logrus"
 	"net"
 	"os"
 	"os/exec"
 	"strconv"
 	"time"
+
+	"github.com/shirou/gopsutil/cpu"
+	"github.com/shirou/gopsutil/disk"
+	"github.com/shirou/gopsutil/mem"
+	"github.com/sirupsen/logrus"
 )
 
 func Exec(cmd string) (string, error) {
@@ -31,32 +32,32 @@ func IsPortAvailable(port uint, network string) bool {
 			IP:   net.IPv4(0, 0, 0, 0),
 			Port: int(port),
 		})
-		defer func() {
-			if listener != nil {
-				listener.Close()
-			}
-		}()
 		if err != nil {
-			logrus.Errorf("port %d is taken err: %s", port, err)
+			logrus.Errorf("TCP port %d is taken err: %s", port, err)
 			return false
 		}
+		if listener != nil {
+			listener.Close()
+		}
+		return true
 	}
 	if network == "udp" {
 		listener, err := net.ListenUDP("udp", &net.UDPAddr{
 			IP:   net.IPv4(0, 0, 0, 0),
 			Port: int(port),
 		})
-		defer func() {
-			if listener != nil {
-				listener.Close()
-			}
-		}()
 		if err != nil {
-			logrus.Errorf("port %d is taken err: %s", port, err)
+			logrus.Errorf("UDP port %d is taken err: %s", port, err)
 			return false
 		}
+		if listener != nil {
+			listener.Close()
+		}
+		return true
 	}
-	return true
+	// Invalid network type
+	logrus.Errorf("Invalid network type: %s", network)
+	return false
 }
 
 func GetCpuPercent() (float64, error) {

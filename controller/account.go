@@ -3,7 +3,6 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"h-ui/model/constant"
 	"h-ui/model/dto"
 	"h-ui/model/entity"
@@ -13,6 +12,9 @@ import (
 	"io"
 	"strings"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 func Login(c *gin.Context) {
@@ -35,7 +37,7 @@ func Login(c *gin.Context) {
 		TokenType:   constant.TokenType,
 		AccessToken: token,
 	}
-	service.TelegramLoginRemind(*loginDto.Username, c.ClientIP())
+	service.TelegramLoginRemind(*loginDto.Username, c.ClientIP(), tgbotapi.Update{})
 	vo.Success(jwtVo, c)
 }
 

@@ -3,14 +3,15 @@ package service
 import (
 	"errors"
 	"fmt"
-	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
 	"h-ui/dao"
 	"h-ui/model/bo"
 	"h-ui/model/constant"
 	"h-ui/model/entity"
 	"strconv"
 	"strings"
+
+	"github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v3"
 )
 
 func UpdateConfig(key string, value string) error {
@@ -159,7 +160,7 @@ func GetPortAndCert() (int64, string, string, error) {
 	portInt, err := strconv.ParseInt(port, 10, 64)
 	if err != nil {
 		logrus.Errorf("port: %s is invalid", port)
-		return 0, "", "", errors.New(fmt.Sprintf("port: %s is invalid", port))
+		return 0, "", "", fmt.Errorf("port: %s is invalid", port)
 	}
 
 	return portInt, crtPath, keyPath, nil

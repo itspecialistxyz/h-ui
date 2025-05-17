@@ -32,10 +32,10 @@ func DownloadHysteria2(version string) error {
 	}
 
 	resp, err := http.Get(url)
-	defer resp.Body.Close()
 	if err != nil {
 		return fmt.Errorf("failed to download file: %v", err)
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("failed to download file, status code: %d", resp.StatusCode)
@@ -48,10 +48,10 @@ func DownloadHysteria2(version string) error {
 	}
 
 	file, err := os.Create(hysteria2BinPath)
-	defer file.Close()
 	if err != nil {
 		return fmt.Errorf("failed to create file %s: %v", hysteria2BinPath, err)
 	}
+	defer file.Close()
 
 	_, err = io.Copy(file, resp.Body)
 	if err != nil {
