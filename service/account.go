@@ -10,13 +10,62 @@ import (
 	"h-ui/model/dto"
 	"h-ui/model/entity"
 	"h-ui/model/vo"
+	"h-ui/util"
+	"strings"
+
+	"github.com/sirupsen/logrus"
 )
 
 func Login(username string, pass string) (string, error) {
-	account, err := dao.GetAccount("username = ? and pass = ? and role = 'admin' and deleted = 0", username, pass)
+	account, err := dao.GetAccount("username = ? and role = 'admin' and deleted = 0", username)
 	if err != nil {
-		return "", err
+		// If account not found, return wrong password error for security
+		if err.Error() == constant.WrongPassword || strings.Contains(err.Error(), "record not found") {
+			return "", errors.New(constant.WrongPassword)
+		}
+		return "", err // Other DB errors
 	}
+
+	if account.Pass == nil || *account.Pass == "" {
+		return "", errors.New(constant.WrongPassword) // No password set
+	}
+	storedHash := *account.Pass
+	authenticated := false
+
+	if strings.HasPrefix(storedHash, util.Argon2idPrefix) {
+		// Argon2id hash
+		match, err := util.VerifyPassword(pass, storedHash)
+		if err != nil {
+			logrus.Errorf("Error verifying Argon2id password for user %s: %v", username, err)
+			return "", errors.New(constant.WrongPassword) // Treat verification error as auth failure
+		}
+		if match {
+			authenticated = true
+		}
+	} else {
+		// Assume old SHA224 hash
+		if util.SHA224String(pass) == storedHash {
+			authenticated = true
+			// Migrate to Argon2id
+			newArgon2idHash, err := util.HashPassword(pass)
+			if err == nil {
+				if errUpdate := dao.UpdateAccount([]int64{*account.Id}, map[string]interface{}{"pass": newArgon2idHash}); errUpdate != nil {
+					logrus.Errorf("Failed to migrate password to Argon2id for user %s: %v", username, errUpdate)
+					// Do not fail login if migration fails, user is already authenticated
+				} else {
+					logrus.Infof("Successfully migrated password to Argon2id for user %s", username)
+				}
+			} else {
+				logrus.Errorf("Failed to hash password with Argon2id during migration for user %s: %v", username, err)
+				// Do not fail login if hashing fails during migration
+			}
+		}
+	}
+
+	if !authenticated {
+		return "", errors.New(constant.WrongPassword)
+	}
+
 	accountBo := bo.AccountBo{
 		Id:       *account.Id,
 		Username: *account.Username,
@@ -31,6 +80,16 @@ func PageAccount(accountPageDto dto.AccountPageDto) ([]entity.Account, int64, er
 }
 
 func SaveAccount(account entity.Account) error {
+	// If it's a new account and ConPass is not set, generate a random one.
+	if (account.Id == nil || *account.Id == 0) && (account.ConPass == nil || *account.ConPass == "") {
+		newRandomConPass, err := util.RandomString(16)
+		if err != nil {
+			logrus.Errorf("Failed to generate random ConPass for new account %s: %v", *account.Username, err)
+			return fmt.Errorf("failed to generate random ConPass: %w", err)
+		}
+		account.ConPass = &newRandomConPass
+		logrus.Infof("Generated random ConPass for new account %s", *account.Username)
+	}
 	_, err := dao.SaveAccount(account)
 	return err
 }
@@ -45,10 +104,22 @@ func UpdateAccount(account entity.Account) error {
 		updates["username"] = *account.Username
 	}
 	if account.Pass != nil && *account.Pass != "" {
-		updates["pass"] = *account.Pass
+		newPlaintextPassword := *account.Pass
+		newArgon2idHash, err := util.HashPassword(newPlaintextPassword)
+		if err != nil {
+			logrus.Errorf("Failed to hash new password for user %s during update: %v", *account.Username, err)
+			return fmt.Errorf("failed to hash new password: %w", err) // Return error if hashing fails
+		}
+		updates["pass"] = newArgon2idHash
 	}
-	if account.ConPass != nil && *account.ConPass != "" {
-		updates["con_pass"] = fmt.Sprintf("%s.%s", *account.Username, *account.ConPass)
+	// If ConPass is explicitly provided in the update, use that value directly.
+	// Otherwise, ConPass is not changed.
+	if account.ConPass != nil {
+		if *account.ConPass == "" { // Allow clearing ConPass by providing an empty string
+			updates["con_pass"] = ""
+		} else {
+			updates["con_pass"] = *account.ConPass
+		}
 	}
 	if account.Quota != nil {
 		updates["quota"] = *account.Quota

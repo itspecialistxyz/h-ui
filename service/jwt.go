@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/sirupsen/logrus"
 )
 
@@ -17,14 +17,14 @@ const TokenExpireDuration = time.Hour * 24
 
 type MyClaims struct {
 	AccountBo bo.AccountBo `json:"account"`
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 }
 
 func GenToken(accountBo bo.AccountBo) (string, error) {
 	c := MyClaims{
 		AccountBo: accountBo,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(TokenExpireDuration).Unix(),
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(TokenExpireDuration)),
 			Issuer:    "h-ui",
 		},
 	}
@@ -69,11 +69,19 @@ func ParseToken(tokenString string) (*MyClaims, error) {
 	})
 
 	if err != nil {
-		if ve, ok := err.(*jwt.ValidationError); ok {
-			if ve.Errors&jwt.ValidationErrorExpired != 0 {
-				return nil, errors.New(constant.TokenExpiredError)
-			}
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return nil, errors.New(constant.TokenExpiredError)
 		}
+		// For other JWT validation errors (e.g. malformed, invalid signature, not valid yet)
+		if errors.Is(err, jwt.ErrTokenMalformed) ||
+			errors.Is(err, jwt.ErrTokenSignatureInvalid) ||
+			errors.Is(err, jwt.ErrTokenNotValidYet) ||
+			errors.Is(err, jwt.ErrInvalidKey) || // Example of another specific error
+			errors.Is(err, jwt.ErrInvalidKeyType) { // Example of another specific error
+			return nil, errors.New(constant.IllegalTokenError)
+		}
+		// For any other errors not specifically handled, return a generic illegal token error
+		logrus.Errorf("Unhandled JWT parsing error: %v", err)
 		return nil, errors.New(constant.IllegalTokenError)
 	}
 

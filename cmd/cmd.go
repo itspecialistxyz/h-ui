@@ -23,6 +23,7 @@ var (
 func init() {
 	rootCmd.Flags().BoolVarP(&version, "version", "v", false, "Show version")
 	rootCmd.Flags().StringVarP(&port, "port", "p", "", "The port of the web server")
+	rootCmd.AddCommand(setupCmd)
 }
 
 func run(cmd *cobra.Command, args []string) {

@@ -34,10 +34,20 @@ func runReset(cmd *cobra.Command, args []string) {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
+	hashedPassword, err := util.HashPassword(password)
+	if err != nil {
+		fmt.Printf("Error hashing password during reset: %v\n", err)
+		os.Exit(1)
+	}
+	newRandomConPass, err := util.RandomString(16)
+	if err != nil {
+		fmt.Printf("Error generating random connection password: %v\n", err)
+		os.Exit(1)
+	}
 	if err = dao.UpdateAccount([]int64{1}, map[string]interface{}{
 		"username": username,
-		"pass":     util.SHA224String(password),
-		"con_pass": fmt.Sprintf("%s.%s", username, password)}); err != nil {
+		"pass":     hashedPassword,
+		"con_pass": newRandomConPass}); err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
@@ -47,5 +57,5 @@ func runReset(cmd *cobra.Command, args []string) {
 	}
 	fmt.Println(fmt.Sprintf("h-ui Login Username: %s", username))
 	fmt.Println(fmt.Sprintf("h-ui Login Password: %s", password))
-	fmt.Println(fmt.Sprintf("h-ui Connection Password: %s", fmt.Sprintf("%s.%s", username, password)))
+	fmt.Println(fmt.Sprintf("h-ui Connection Password: %s", newRandomConPass))
 }

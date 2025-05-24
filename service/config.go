@@ -56,6 +56,10 @@ func GetHysteria2Config() (bo.Hysteria2ServerConfig, error) {
 	if err != nil {
 		return serverConfig, err
 	}
+	if config.Value == nil || *config.Value == "" {
+		// Return empty config if not set, to avoid unmarshal errors on empty string
+		return bo.Hysteria2ServerConfig{}, nil
+	}
 	if err = yaml.Unmarshal([]byte(*config.Value), &serverConfig); err != nil {
 		return serverConfig, err
 	}
@@ -89,14 +93,24 @@ func UpdateHysteria2Config(hysteria2ServerConfig bo.Hysteria2ServerConfig) error
 		return err
 	}
 
+	crtPath, keyPath, err := getHUIKeyAndCrtPath()
+	if err != nil {
+		logrus.Errorf("Failed to get HUI cert paths for Hysteria2 auth config: %v", err)
+		return errors.New("failed to get HUI cert paths")
+	}
+
+	authHttpInsecure := true // Default to insecure if not using TLS
+	if crtPath != "" && keyPath != "" {
+		authHttpInsecure = false // H-UI is using TLS, so callback can be secure
+	}
+
 	authType := "http"
-	authHttpInsecure := true
 	var auth bo.ServerConfigAuth
 	auth.Type = &authType
-	var http bo.ServerConfigAuthHTTP
-	http.URL = &authHttpUrl
-	http.Insecure = &authHttpInsecure
-	auth.HTTP = &http
+	var httpAuth bo.ServerConfigAuthHTTP // Renamed to avoid conflict with http package
+	httpAuth.URL = &authHttpUrl
+	httpAuth.Insecure = &authHttpInsecure
+	auth.HTTP = &httpAuth
 	hysteria2ServerConfig.Auth = &auth
 	hysteria2ServerConfig.TrafficStats.Secret = &jwtSecret
 
@@ -147,6 +161,9 @@ func GetPortAndCert() (int64, string, string, error) {
 	crtPath := ""
 	keyPath := ""
 	for _, config := range configs {
+		if config.Value == nil || config.Key == nil {
+			continue
+		}
 		value := *config.Value
 		if *config.Key == constant.HUIWebPort {
 			port = value
@@ -157,13 +174,37 @@ func GetPortAndCert() (int64, string, string, error) {
 		}
 	}
 
+	if port == "" { // Ensure port has a default or error if critical
+		logrus.Warnf("HUIWebPort is not set, using default or potentially failing if required.")
+		// Consider returning an error or using a default if appropriate
+		// For now, let it attempt parse and fail if empty, as per original logic
+	}
+
 	portInt, err := strconv.ParseInt(port, 10, 64)
 	if err != nil {
-		logrus.Errorf("port: %s is invalid", port)
-		return 0, "", "", fmt.Errorf("port: %s is invalid", port)
+		logrus.Errorf("port: '%s' is invalid: %v", port, err)
+		return 0, "", "", fmt.Errorf("port: '%s' is invalid: %w", port, err)
 	}
 
 	return portInt, crtPath, keyPath, nil
+}
+
+func getHUIKeyAndCrtPath() (string, string, error) {
+	configs, err := dao.ListConfig("key IN (?, ?)", constant.HUICrtPath, constant.HUIKeyPath)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to query cert paths: %w", err)
+	}
+	var crtPath, keyPath string
+	for _, c := range configs {
+		if c.Key != nil && c.Value != nil {
+			if *c.Key == constant.HUICrtPath {
+				crtPath = *c.Value
+			} else if *c.Key == constant.HUIKeyPath {
+				keyPath = *c.Value
+			}
+		}
+	}
+	return crtPath, keyPath, nil
 }
 
 func GetAuthHttpUrl() (string, error) {

@@ -19,10 +19,30 @@ import (
 func runServer(port string) error {
 	defer releaseResource()
 
-	// Security: Check required env vars for domain/path restriction
-	if os.Getenv("HUI_ALLOWED_DOMAIN") == "" || os.Getenv("HUI_SECURITY_PATH") == "" {
-		logrus.Fatal("HUI_ALLOWED_DOMAIN and HUI_SECURITY_PATH environment variables must be set for admin login security.")
+	// Check for initial setup
+	allowedDomainEnv := os.Getenv("HUI_ALLOWED_DOMAIN")
+	securityPathEnv := os.Getenv("HUI_SECURITY_PATH")
+
+	if allowedDomainEnv == "" || securityPathEnv == "" {
+		// Env vars not set, try to get from DB
+		if err := dao.InitSqliteDB(); err != nil {
+			logrus.Fatalf("Failed to initialize database for setup check: %v. Please run './h-ui setup'", err)
+		}
+		allowedDomainDB, _ := dao.GetConfig("key = ?", constant.HUIAllowedDomain)
+		securityPathDB, _ := dao.GetConfig("key = ?", constant.HUISecurityPath)
+		dao.CloseSqliteDB() // Close DB after checking
+
+		if allowedDomainDB.Value == "" || securityPathDB.Value == "" {
+			// Not found in DB either
+			fmt.Println("Initial setup required. Please run: ./h-ui setup")
+			os.Exit(1)
+		}
+		// If found in DB, proceed (middleware will pick them up)
+		logrus.Info("Domain and security path settings found in database.")
+	} else {
+		logrus.Info("Domain and security path settings found in environment variables.")
 	}
+	// At this point, settings are either in env vars or DB, or the program has exited.
 
 	middleware.InitLog()
 	service.InitForward()
